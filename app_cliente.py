@@ -15,7 +15,7 @@ st.set_page_config(page_title=f"Gestión Eventos Pro {VERSION}", layout="wide")
 def get_db_engine():
     # Obtiene la URI de conexión desde los Secrets de Streamlit
     try:
-        db_uri = st.secrets["connections"]["supabase"]["uri"]
+        db_uri = st.secrets["connections"]["postgresql"]["url"]
         return create_engine(db_uri)
     except Exception:
         st.error("❌ Error de configuración: No se encontró la credencial de conexión a Supabase en los Secrets.")
