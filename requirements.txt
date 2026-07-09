@@ -1,4 +1,4 @@
-Plaintext
+
 pandas
 fpdf2
 openpyxl
