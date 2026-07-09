@@ -1,0 +1,6 @@
+Plaintext
+pandas
+fpdf2
+openpyxl
+psycopg2-binary
+sqlalchemy
