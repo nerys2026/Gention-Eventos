@@ -143,11 +143,11 @@ if opcion == "Nuevo Pedido":
             with engine.connect() as conn:
                 if termino_busqueda.strip() != "":
                     query = """
-            SELECT id_cliente, nombre, cedula 
-            FROM clientes 
-            WHERE nombre ILIKE :term OR cedula::text LIKE :term
-        """
-        df = pd.read_sql_query(query, conn, params={"term": f"%{termino_busqueda}%"})
+                    SELECT id_cliente, nombre, cedula 
+                    FROM clientes 
+                    WHERE nombre ILIKE :term OR cedula::text LIKE :term
+                    """
+                    df = pd.read_sql_query(query, conn, params={"term": f"%{termino_busqueda}%"})
                 else:
                     df = pd.read_sql_query("SELECT id_cliente, nombre, cedula FROM clientes ORDER BY id_cliente DESC LIMIT 15", conn)
 
