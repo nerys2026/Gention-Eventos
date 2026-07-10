@@ -110,7 +110,8 @@ if opcion == "Nuevo Pedido":
         st.write("### ⬇️ Descargar comprobantes del pedido actual:")
         col_btn1, col_btn2 = st.columns(2)
         with col_btn1:
-            st.download_button(label="📄 Descargar Recibo PDF", data=st.session_state.pdf_descarga,
+            st.download_button(label="📄 Descargar Recibo PDF", 
+                               data=bytes(st.session_state.pdf_descarga) if st.session_state.pdf_descarga else b"",
                                file_name=f"pedido_{st.session_state.nombre_cliente_descarga}_{st.session_state.fecha_entrega_descarga}.pdf",
                                mime="application/pdf")
         with col_btn2:
@@ -292,11 +293,11 @@ if opcion == "Nuevo Pedido":
                 pdf.set_font("Arial", "", 10)
                 pdf.multi_cell(0, 5, observaciones)
             
-            # Solución definitiva al error bytearray
-            resultado_pdf = pdf.output(dest="S")
-            if isinstance(resultado_pdf, (bytes, bytearray)):
-                return resultado_pdf
-            return resultado_pdf.encode("latin1")
+            # Forzar la salida a un formato de bytes estandarizado e inequívoco
+            pdf_output = pdf.output(dest='S')
+            if isinstance(pdf_output, str):
+                return pdf_output.encode('latin1')
+            return bytes(pdf_output)
 
         def generar_excel_pedido(nombre_c, tel_c, dir_c, prods, total, abono, saldo, domicilio, observaciones, f_sol, f_ent, domi_name):
             output = io.BytesIO()
