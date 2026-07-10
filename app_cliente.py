@@ -141,27 +141,30 @@ if opcion == "Nuevo Pedido":
                                              placeholder="Ej: Carolina Vega o 1017...")
 
             with engine.connect() as conn:
-                if termino_busqueda.strip() != "":
-                    query = """
-                    SELECT id_cliente, nombre, cedula 
-                    FROM clientes 
-                    WHERE nombre ILIKE :term OR cedula::text LIKE :term
-                    """
-                    df = pd.read_sql_query(query, conn, params={"term": f"%{termino_busqueda}%"})
-                else:
-                    df = pd.read_sql_query("SELECT id_cliente, nombre, cedula FROM clientes ORDER BY id_cliente DESC LIMIT 15", conn)
+               termino_busqueda = st.text_input("🔍 Buscar Cliente (por Nombre o Cédula):")
+    
+    if termino_busqueda:
+        query = """
+            SELECT id_cliente, nombre, cedula 
+            FROM clientes 
+            WHERE nombre ILIKE :term OR cedula::text LIKE :term
+        """
+        df = pd.read_sql_query(query, conn, params={"term": f"%{termino_busqueda}%"})
+    else:
+        df = pd.read_sql_query("SELECT id_cliente, nombre, cedula FROM clientes ORDER BY id_cliente DESC LIMIT 15", conn)
 
-            if not df.empty:
-                df['display_name'] = df.apply(
-                    lambda row: f"{row['nombre']} (Cédula: {row['cedula']})" if row['cedula'] else row['nombre'],
-                    axis=1)
-
-                sel = st.selectbox("Selecciona el cliente de la lista filtrada:", df['display_name'],
-                                   key=f"sel_cliente_{st.session_state.form_reset_counter}")
-                st.session_state.id_cliente_activo = int(df.loc[df['display_name'] == sel, 'id_cliente'].values[0])
-             else:
-                st.warning("⚠️ No se encontraron clientes con esos datos. Intenta otra búsqueda o marca 'Agregar nuevo'.")
-                st.session_state.id_cliente_activo = None
+    if not df.empty:
+        df['display_name'] = df.apply(
+            lambda row: f"{row['nombre']} (Cédula: {row['cedula']})" if row['cedula'] else row['nombre'],
+            axis=1
+        )
+        
+        opciones_clientes = {row['display_name']: row['id_cliente'] for _, row in df.iterrows()}
+        cliente_seleccionado = st.selectbox("👤 Seleccione el Cliente:", opciones_clientes.keys())
+        id_cliente_actual = opciones_clientes[cliente_seleccionado]
+    else:
+        st.warning("⚠️ No se encontraron clientes con ese criterio.")
+        id_cliente_actual = None
         else:
             c_nombre = st.text_input("Nombre:", key=f"c_nom_{st.session_state.form_reset_counter}")
             c_cedula = st.text_input("Cédula / NIT (Opcional):", key=f"c_ced_{st.session_state.form_reset_counter}")
