@@ -291,7 +291,12 @@ if opcion == "Nuevo Pedido":
                 pdf.cell(0, 6, "Observaciones:", ln=True)
                 pdf.set_font("Arial", "", 10)
                 pdf.multi_cell(0, 5, observaciones)
-            return pdf.output(dest="S").encode("latin1")
+            
+            # Solución definitiva al error bytearray
+            resultado_pdf = pdf.output(dest="S")
+            if isinstance(resultado_pdf, (bytes, bytearray)):
+                return resultado_pdf
+            return resultado_pdf.encode("latin1")
 
         def generar_excel_pedido(nombre_c, tel_c, dir_c, prods, total, abono, saldo, domicilio, observaciones, f_sol, f_ent, domi_name):
             output = io.BytesIO()
