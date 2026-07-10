@@ -140,31 +140,30 @@ if opcion == "Nuevo Pedido":
                                              key=f"busqueda_cli_{st.session_state.form_reset_counter}",
                                              placeholder="Ej: Carolina Vega o 1017...")
 
-            with engine.connect() as conn:
-               termino_busqueda = st.text_input("🔍 Buscar Cliente (por Nombre o Cédula):")
-    
-    if termino_busqueda:
-        query = """
-            SELECT id_cliente, nombre, cedula 
-            FROM clientes 
-            WHERE nombre ILIKE :term OR cedula::text LIKE :term
-        """
-        df = pd.read_sql_query(query, conn, params={"term": f"%{termino_busqueda}%"})
-    else:
-        df = pd.read_sql_query("SELECT id_cliente, nombre, cedula FROM clientes ORDER BY id_cliente DESC LIMIT 15", conn)
+            if termino_busqueda:
+                query = """
+                    SELECT id_cliente, nombre, cedula 
+                    FROM clientes 
+                    WHERE nombre ILIKE :term OR cedula::text LIKE :term
+                """
+                with engine.connect() as conn:
+                    df = pd.read_sql_query(text(query), conn, params={"term": f"%{termino_busqueda}%"})
+            else:
+                with engine.connect() as conn:
+                    df = pd.read_sql_query(text("SELECT id_cliente, nombre, cedula FROM clientes ORDER BY id_cliente DESC LIMIT 15"), conn)
 
-    if not df.empty:
-        df['display_name'] = df.apply(
-            lambda row: f"{row['nombre']} (Cédula: {row['cedula']})" if row['cedula'] else row['nombre'],
-            axis=1
-        )
-        
-        opciones_clientes = {row['display_name']: row['id_cliente'] for _, row in df.iterrows()}
-        cliente_seleccionado = st.selectbox("👤 Seleccione el Cliente:", opciones_clientes.keys())
-        id_cliente_actual = opciones_clientes[cliente_seleccionado]
-    else:
-        st.warning("⚠️ No se encontraron clientes con ese criterio.")
-        id_cliente_actual = None
+            if not df.empty:
+                df['display_name'] = df.apply(
+                    lambda row: f"{row['nombre']} (Cédula: {row['cedula']})" if row['cedula'] else row['nombre'],
+                    axis=1
+                )
+                
+                opciones_clientes = {row['display_name']: row['id_cliente'] for _, row in df.iterrows()}
+                cliente_seleccionado = st.selectbox("👤 Seleccione el Cliente:", opciones_clientes.keys())
+                st.session_state.id_cliente_activo = opciones_clientes[cliente_seleccionado]
+            else:
+                st.warning("⚠️ No se encontraron clientes con ese criterio.")
+                st.session_state.id_cliente_activo = None
         else:
             c_nombre = st.text_input("Nombre:", key=f"c_nom_{st.session_state.form_reset_counter}")
             c_cedula = st.text_input("Cédula / NIT (Opcional):", key=f"c_ced_{st.session_state.form_reset_counter}")
@@ -186,7 +185,7 @@ if opcion == "Nuevo Pedido":
     if st.session_state.id_cliente_activo and not st.session_state.pedido_completado:
         engine = get_db_engine()
         with engine.connect() as conn:
-            df_prod = pd.read_sql_query("SELECT * FROM productos ORDER BY nombre ASC", conn)
+            df_prod = pd.read_sql_query(text("SELECT * FROM productos ORDER BY nombre ASC"), conn)
 
         prods_sel = st.multiselect("Productos a alquilar:", df_prod['nombre'],
                                    key=f"multiselect_prods_{st.session_state.form_reset_counter}")
@@ -388,7 +387,7 @@ elif opcion == "Inventario":
                         st.rerun()
 
         with engine.connect() as conn:
-            df_inv = pd.read_sql_query("SELECT id_producto, nombre, stock_total, stock_disponible, valor_unitario FROM productos ORDER BY id_producto ASC", conn)
+            df_inv = pd.read_sql_query(text("SELECT id_producto, nombre, stock_total, stock_disponible, valor_unitario FROM productos ORDER BY id_producto ASC"), conn)
 
         edited_df = st.data_editor(df_inv, use_container_width=True, hide_index=True)
 
@@ -402,7 +401,7 @@ elif opcion == "Inventario":
     with tab2:
         st.write("### Pedidos Activos")
         with engine.connect() as conn:
-            df_pendientes = pd.read_sql_query("SELECT a.id_cita, c.nombre as cliente, a.fecha_entrega, a.valor_total, a.domiciliario, a.estado FROM agendamientos a JOIN clientes c ON a.id_cliente = c.id_cliente WHERE a.estado IN ('Alquilado', 'Pendiente')", conn)
+            df_pendientes = pd.read_sql_query(text("SELECT a.id_cita, c.nombre as cliente, a.fecha_entrega, a.valor_total, a.domiciliario, a.estado FROM agendamientos a JOIN clientes c ON a.id_cliente = c.id_cliente WHERE a.estado IN ('Alquilado', 'Pendiente')"), conn)
 
         if df_pendientes.empty:
             st.info("🎉 ¡Todo está en bodega!")
@@ -426,7 +425,7 @@ elif opcion == "Clientes":
     st.title("👤 Clientes")
     engine = get_db_engine()
     with engine.connect() as conn:
-        st.dataframe(pd.read_sql_query("SELECT id_cliente AS ID, nombre AS Nombre, cedula AS Cedula, telefono AS Telefono, direccion AS Direccion FROM clientes ORDER BY id_cliente DESC", conn), use_container_width=True, hide_index=True)
+        st.dataframe(pd.read_sql_query(text("SELECT id_cliente AS ID, nombre AS Nombre, cedula AS Cedula, telefono AS Telefono, direccion AS Direccion FROM clientes ORDER BY id_cliente DESC"), conn), use_container_width=True, hide_index=True)
 
 elif opcion == "Auditoría":
     st.title("👻 Auditoría Global")
@@ -438,4 +437,4 @@ elif opcion == "Auditoría":
             a.fecha_entrega AS "Fecha Entrega", a.domiciliario AS "Domiciliario", a.observaciones AS "Observaciones"
             FROM agendamientos a LEFT JOIN clientes c ON a.id_cliente = c.id_cliente ORDER BY a.id_cita DESC
         """
-        st.dataframe(pd.read_sql_query(query_segura, conn), use_container_width=True, hide_index=True)
+        st.dataframe(pd.read_sql_query(text(query_segura), conn), use_container_width=True, hide_index=True)
