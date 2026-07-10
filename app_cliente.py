@@ -159,7 +159,7 @@ if opcion == "Nuevo Pedido":
                 sel = st.selectbox("Selecciona el cliente de la lista filtrada:", df['display_name'],
                                    key=f"sel_cliente_{st.session_state.form_reset_counter}")
                 st.session_state.id_cliente_activo = int(df.loc[df['display_name'] == sel, 'id_cliente'].values[0])
-            else:
+             else:
                 st.warning("⚠️ No se encontraron clientes con esos datos. Intenta otra búsqueda o marca 'Agregar nuevo'.")
                 st.session_state.id_cliente_activo = None
         else:
